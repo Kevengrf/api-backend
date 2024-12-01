@@ -1,15 +1,17 @@
 package com.example.oxeqarti.controller;
 
+import com.example.oxeqarti.dto.ArteDTO;
+import com.example.oxeqarti.dto.GaleriaDTO;
+import com.example.oxeqarti.model.Arte;
+import com.example.oxeqarti.model.Galeria;
+import com.example.oxeqarti.service.impl.GaleriaServiceImpl;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.example.oxeqarti.model.Arte;
-import com.example.oxeqarti.model.Galeria;
-import com.example.oxeqarti.service.*;
-import com.example.oxeqarti.service.impl.GaleriaServiceImpl;
-
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/galerias")
@@ -18,19 +20,27 @@ public class GaleriaController {
     @Autowired
     private GaleriaServiceImpl galeriaService;
 
+    @Autowired
+    private ModelMapper modelMapper;
+
     @PostMapping
-    public ResponseEntity<Galeria> salvarGaleria(@RequestBody Galeria galeria) {
+    public ResponseEntity<GaleriaDTO> salvarGaleria(@RequestBody GaleriaDTO galeriaDTO) {
+        Galeria galeria = modelMapper.map(galeriaDTO, Galeria.class);
         Galeria galeriaSalva = galeriaService.salvarGaleria(galeria);
-        return ResponseEntity.ok(galeriaSalva); // Retorna a galeria salva com o status 200 OK
+
+        return ResponseEntity.ok(modelMapper.map(galeriaSalva, GaleriaDTO.class));
     }
 
     @GetMapping("/obras/{nomeGaleria}")
-    public ResponseEntity<List<Arte>> encontrarObrasEmExposicaoPorGaleria(@PathVariable String nomeGaleria) {
+    public ResponseEntity<List<ArteDTO>> encontrarObrasEmExposicaoPorGaleria(@PathVariable String nomeGaleria) {
         List<Arte> obras = galeriaService.encontrarObrasEmExposicaoPorGaleria(nomeGaleria);
         if (obras != null && !obras.isEmpty()) {
-            return ResponseEntity.ok(obras); // Retorna a lista de obras com o status 200 OK
+            List<ArteDTO> obrasDTO = obras.stream()
+                    .map(arte -> modelMapper.map(arte, ArteDTO.class))
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(obrasDTO);
         } else {
-            return ResponseEntity.notFound().build(); // Retorna 404 se não encontrar obras ou galeria
+            return ResponseEntity.notFound().build();
         }
     }
 }
